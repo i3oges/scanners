@@ -18,7 +18,7 @@ type ScanAllFixture struct {
 	*gunit.Fixture
 }
 
-func (this *ScanAllFixture) scanAll(inputs []string, options ...Option) (scanned []Record) {
+func (saf *ScanAllFixture) scanAll(inputs []string, options ...Option) (scanned []Record) {
 	scanner := NewScanner(reader(inputs), options...)
 	line := 1
 	for ; scanner.Scan(); line++ {
@@ -37,66 +37,66 @@ func (this *ScanAllFixture) scanAll(inputs []string, options ...Option) (scanned
 	return scanned
 }
 
-func (this *ScanAllFixture) TestCanonical() {
-	scanned := this.scanAll(csvCanon, Comma(','), FieldsPerRecord(3))
-	this.So(scanned, should.Resemble, expectedScannedOutput)
+func (saf *ScanAllFixture) TestCanonical() {
+	scanned := saf.scanAll(csvCanon, Comma(','), FieldsPerRecord(3))
+	saf.So(scanned, should.Resemble, expectedScannedOutput)
 }
 
-func (this *ScanAllFixture) TestCanonicalWithOptions() {
-	scanned := this.scanAll(csvCanonRequiringConfigOptions, Comma(';'), Comment('#'))
-	this.So(scanned, should.Resemble, expectedScannedOutput)
+func (saf *ScanAllFixture) TestCanonicalWithOptions() {
+	scanned := saf.scanAll(csvCanonRequiringConfigOptions, Comma(';'), Comment('#'))
+	saf.So(scanned, should.Resemble, expectedScannedOutput)
 }
 
-func (this *ScanAllFixture) TestOptions() {
+func (saf *ScanAllFixture) TestOptions() {
 	scanner := NewScanner(nil, ReuseRecord(true), TrimLeadingSpace(true), LazyQuotes(true))
-	this.So(scanner.reader.ReuseRecord, should.BeTrue)
-	this.So(scanner.reader.LazyQuotes, should.BeTrue)
-	this.So(scanner.reader.TrimLeadingSpace, should.BeTrue)
+	saf.So(scanner.reader.ReuseRecord, should.BeTrue)
+	saf.So(scanner.reader.LazyQuotes, should.BeTrue)
+	saf.So(scanner.reader.TrimLeadingSpace, should.BeTrue)
 }
 
-func (this *ScanAllFixture) TestInconsistentFieldCounts_ContinueOnError() {
-	scanned := this.scanAll(csvCanonInconsistentFieldCounts, ContinueOnError(true))
-	this.So(scanned, should.Resemble, []Record{
+func (saf *ScanAllFixture) TestInconsistentFieldCounts_ContinueOnError() {
+	scanned := saf.scanAll(csvCanonInconsistentFieldCounts, ContinueOnError(true))
+	saf.So(scanned, should.Resemble, []Record{
 		{line: 1, record: []string{"1", "2", "3"}, err: nil},
 		{line: 2, record: []string{"1", "2", "3", "4"}, err: &csv.ParseError{StartLine: 2, Line: 2, Column: 0, Err: csv.ErrFieldCount}},
 		{line: 3, record: []string{"1", "2", "3"}, err: nil},
 	})
 }
 
-func (this *ScanAllFixture) TestInconsistentFieldCounts_HaltOnError() {
-	scanned := this.scanAll(csvCanonInconsistentFieldCounts)
-	this.So(scanned, should.Resemble, []Record{
+func (saf *ScanAllFixture) TestInconsistentFieldCounts_HaltOnError() {
+	scanned := saf.scanAll(csvCanonInconsistentFieldCounts)
+	saf.So(scanned, should.Resemble, []Record{
 		{line: 1, record: []string{"1", "2", "3"}, err: nil},
 		{line: 2, record: nil, err: &csv.ParseError{StartLine: 2, Line: 2, Column: 0, Err: csv.ErrFieldCount}},
 	})
 }
 
-func (this *ScanAllFixture) TestCallsToScanAfterEOFReturnFalse() {
+func (saf *ScanAllFixture) TestCallsToScanAfterEOFReturnFalse() {
 	scanner := NewScanner(strings.NewReader("1,2,3"), Comma(','))
 
-	this.So(scanner.Scan(), should.BeTrue)
-	this.So(scanner.Record(), should.Resemble, []string{"1", "2", "3"})
-	this.So(scanner.Error(), should.BeNil)
+	saf.So(scanner.Scan(), should.BeTrue)
+	saf.So(scanner.Record(), should.Resemble, []string{"1", "2", "3"})
+	saf.So(scanner.Error(), should.BeNil)
 
 	for x := 0; x < 100; x++ {
-		this.So(scanner.Scan(), should.BeFalse)
-		this.So(scanner.Record(), should.BeNil)
-		this.So(scanner.Error(), should.BeNil)
+		saf.So(scanner.Scan(), should.BeFalse)
+		saf.So(scanner.Record(), should.BeNil)
+		saf.So(scanner.Error(), should.BeNil)
 	}
 }
 
-func (this *ScanAllFixture) TestSkipHeader() {
-	scanned := this.scanAll(csvCanon, Comma(','), SkipHeaderRecord())
-	this.So(scanned, should.Resemble, []Record{
+func (saf *ScanAllFixture) TestSkipHeader() {
+	scanned := saf.scanAll(csvCanon, Comma(','), SkipHeaderRecord())
+	saf.So(scanned, should.Resemble, []Record{
 		{line: 1, record: []string{"Rob", "Pike", "rob"}},
 		{line: 2, record: []string{"Ken", "Thompson", "ken"}},
 		{line: 3, record: []string{"Robert", "Griesemer", "gri"}},
 	})
 }
 
-func (this *ScanAllFixture) TestRecords() {
-	scanned := this.scanAll(csvCanon, Comma(','), SkipRecords(3))
-	this.So(scanned, should.Resemble, []Record{
+func (saf *ScanAllFixture) TestRecords() {
+	scanned := saf.scanAll(csvCanon, Comma(','), SkipRecords(3))
+	saf.So(scanned, should.Resemble, []Record{
 		{line: 1, record: []string{"Robert", "Griesemer", "gri"}},
 	})
 }
@@ -111,6 +111,12 @@ var ( // https://golang.org/pkg/encoding/csv/#example_Reader
 		`"Rob","Pike",rob`,
 		`Ken,Thompson,ken`,
 		`"Robert","Griesemer","gri"`,
+	}
+	csvNums = []string{
+		"first_name,height,age",
+		`Jim,4.2,18`,
+		`Steve,1.1,9`,
+		`Bart,1.0,80`,
 	}
 	csvCanonRequiringConfigOptions = []string{
 		`first_name;last_name;username`,

@@ -13,8 +13,8 @@ type Option func(*Scanner)
 // See https://golang.org/pkg/encoding/csv/#pkg-variables
 // and https://golang.org/pkg/encoding/csv/#ParseError
 // for more information regarding possible error values.
-func ContinueOnError(continue_ bool) Option {
-	return func(s *Scanner) { s.continueOnError = continue_ }
+func ContinueOnError(shouldContinue bool) Option {
+	return func(s *Scanner) { s.continueOnError = shouldContinue }
 }
 func Comma(comma rune) Option     { return func(s *Scanner) { s.reader.Comma = comma } }
 func Comment(comment rune) Option { return func(s *Scanner) { s.reader.Comment = comment } }

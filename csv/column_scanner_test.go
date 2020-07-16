@@ -20,53 +20,53 @@ type ColumnScannerFixture struct {
 	users   []User
 }
 
-func (this *ColumnScannerFixture) Setup() {
-	this.scanner, this.err = NewColumnScanner(reader(csvCanon))
-	this.So(this.err, should.BeNil)
-	this.So(this.scanner.Header(), should.Resemble, []string{"first_name", "last_name", "username"})
+func (csf *ColumnScannerFixture) Setup() {
+	csf.scanner, csf.err = NewColumnScanner(reader(csvCanon))
+	csf.So(csf.err, should.BeNil)
+	csf.So(csf.scanner.Header(), should.Resemble, []string{"first_name", "last_name", "username"})
 }
 
-func (this *ColumnScannerFixture) ScanAllUsers() {
-	for this.scanner.Scan() {
-		this.users = append(this.users, this.scanUser())
+func (csf *ColumnScannerFixture) ScanAllUsers() {
+	for csf.scanner.Scan() {
+		csf.users = append(csf.users, csf.scanUser())
 	}
 }
 
-func (this *ColumnScannerFixture) TestReadColumns() {
-	this.ScanAllUsers()
+func (csf *ColumnScannerFixture) TestReadColumns() {
+	csf.ScanAllUsers()
 
-	this.So(this.scanner.Error(), should.BeNil)
-	this.So(this.users, should.Resemble, []User{
+	csf.So(csf.scanner.Error(), should.BeNil)
+	csf.So(csf.users, should.Resemble, []User{
 		{FirstName: "Rob", LastName: "Pike", Username: "rob"},
 		{FirstName: "Ken", LastName: "Thompson", Username: "ken"},
 		{FirstName: "Robert", LastName: "Griesemer", Username: "gri"},
 	})
 }
 
-func (this *ColumnScannerFixture) scanUser() User {
+func (csf *ColumnScannerFixture) scanUser() User {
 	return User{
-		FirstName: this.scanner.Column(this.scanner.Header()[0]),
-		LastName:  this.scanner.Column(this.scanner.Header()[1]),
-		Username:  this.scanner.Column(this.scanner.Header()[2]),
+		FirstName: csf.scanner.Column(csf.scanner.Header()[0]),
+		LastName:  csf.scanner.Column(csf.scanner.Header()[1]),
+		Username:  csf.scanner.Column(csf.scanner.Header()[2]),
 	}
 }
 
-func (this *ColumnScannerFixture) TestCannotReadHeader() {
+func (csf *ColumnScannerFixture) TestCannotReadHeader() {
 	scanner, err := NewColumnScanner(new(ErrorReader))
-	this.So(scanner, should.BeNil)
-	this.So(err, should.NotBeNil)
+	csf.So(scanner, should.BeNil)
+	csf.So(err, should.NotBeNil)
 }
 
-func (this *ColumnScannerFixture) TestColumnNotFound_Error() {
-	this.scanner.Scan()
-	value, err := this.scanner.ColumnErr("nope")
-	this.So(value, should.BeBlank)
-	this.So(err, should.NotBeNil)
+func (csf *ColumnScannerFixture) TestColumnNotFound_Error() {
+	csf.scanner.Scan()
+	value, err := csf.scanner.ColumnErr("nope")
+	csf.So(value, should.BeBlank)
+	csf.So(err, should.NotBeNil)
 }
 
-func (this *ColumnScannerFixture) TestColumnNotFound_Panic() {
-	this.scanner.Scan()
-	this.So(func() { this.scanner.Column("nope") }, should.Panic)
+func (csf *ColumnScannerFixture) TestColumnNotFound_Panic() {
+	csf.scanner.Scan()
+	csf.So(func() { csf.scanner.Column("nope") }, should.Panic)
 }
 
 type User struct {
@@ -77,6 +77,6 @@ type User struct {
 
 type ErrorReader struct{}
 
-func (this *ErrorReader) Read(p []byte) (n int, err error) {
+func (csf *ErrorReader) Read(p []byte) (n int, err error) {
 	return 0, errors.New("ERROR")
 }

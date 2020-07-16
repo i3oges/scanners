@@ -26,26 +26,26 @@ func NewColumnScanner(reader io.Reader, options ...Option) (*ColumnScanner, erro
 	return scanner, nil
 }
 
-func (this *ColumnScanner) readHeader() {
-	for i, value := range this.headerRecord {
-		this.columnIndex[value] = i
+func (cs *ColumnScanner) readHeader() {
+	for i, value := range cs.headerRecord {
+		cs.columnIndex[value] = i
 	}
 }
 
-func (this *ColumnScanner) Header() []string {
-	return this.headerRecord
+func (cs *ColumnScanner) Header() []string {
+	return cs.headerRecord
 }
 
-func (this *ColumnScanner) ColumnErr(column string) (string, error) {
-	index, ok := this.columnIndex[column]
+func (cs *ColumnScanner) ColumnErr(column string) (string, error) {
+	index, ok := cs.columnIndex[column]
 	if !ok {
-		return "", fmt.Errorf("Column [%s] not present in header record: %#v\n", column, this.headerRecord)
+		return "", fmt.Errorf("Column [%s] not present in header record: %#v\n", column, cs.headerRecord)
 	}
-	return this.Record()[index], nil
+	return cs.Record()[index], nil
 }
 
-func (this *ColumnScanner) Column(column string) string {
-	value, err := this.ColumnErr(column)
+func (cs *ColumnScanner) Column(column string) string {
+	value, err := cs.ColumnErr(column)
 	if err != nil {
 		log.Panic(err)
 	}
