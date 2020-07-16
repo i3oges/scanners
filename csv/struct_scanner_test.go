@@ -14,31 +14,45 @@ func TestStructScannerFixture(t *testing.T) {
 type StructScannerFixture struct {
 	*gunit.Fixture
 	scanner *StructScanner
+	numScanner *StructScanner
 	err     error
 	users   []TaggedUser
+	numUsers []NumTaggedUser
 }
 
-func (this *StructScannerFixture) Setup() {
-	this.scanner, this.err = NewStructScanner(reader(csvCanon))
-	this.So(this.err, should.BeNil)
+func (s *StructScannerFixture) Setup() {
+	s.scanner, s.err = NewStructScanner(reader(csvCanon))
+	s.So(s.err, should.BeNil)
+	s.numScanner, s.err = NewStructScanner(reader(csvNums))
+	s.So(s.err, should.BeNil)
 }
 
-func (this *StructScannerFixture) ScanAll() {
-	for this.scanner.Scan() {
+func (s *StructScannerFixture) ScanAll() {
+	for s.scanner.Scan() {
 		var user TaggedUser
-		this.scanner.Populate(&user)
-		this.users = append(this.users, user)
+		s.scanner.Populate(&user)
+		s.users = append(s.users, user)
+	}
+	for s.numScanner.Scan() {
+		var numUser NumTaggedUser
+		s.numScanner.Populate(&numUser)
+		s.numUsers = append(s.numUsers, numUser)
 	}
 }
 
-func (this *StructScannerFixture) Test() {
-	this.ScanAll()
+func (s *StructScannerFixture) Test() {
+	s.ScanAll()
 
-	this.So(this.scanner.Error(), should.BeNil)
-	this.So(this.users, should.Resemble, []TaggedUser{
+	s.So(s.scanner.Error(), should.BeNil)
+	s.So(s.users, should.Resemble, []TaggedUser{
 		{FirstName: "Rob", LastName: "Pike", Username: "rob"},
 		{FirstName: "Ken", LastName: "Thompson", Username: "ken"},
 		{FirstName: "Robert", LastName: "Griesemer", Username: "gri"},
+	})
+	s.So(s.numUsers, should.Resemble, []NumTaggedUser{
+		{FirstName: "Jim", Age: 18, Height: 4.20},
+		{FirstName: "Steve", Age: 9, Height: 1.1},
+		{FirstName: "Bart", Age: 80, Height: 1.0},
 	})
 }
 
@@ -48,18 +62,24 @@ type TaggedUser struct {
 	Username  string `csv:"username"`
 }
 
-func (this *StructScannerFixture) TestCannotReadHeader() {
-	scanner, err := NewStructScanner(new(ErrorReader))
-	this.So(scanner, should.BeNil)
-	this.So(err, should.NotBeNil)
+type NumTaggedUser struct {
+	FirstName string `csv:"first_name"`
+	Height  float64 `csv:"height"`
+	Age  int64 `csv:"age"`
 }
 
-func (this *StructScannerFixture) TestScanIntoLessCompatibleType() {
-	this.scanner.Scan()
+func (s *StructScannerFixture) TestCannotReadHeader() {
+	scanner, err := NewStructScanner(new(ErrorReader))
+	s.So(scanner, should.BeNil)
+	s.So(err, should.NotBeNil)
+}
+
+func (s *StructScannerFixture) TestScanIntoLessCompatibleType() {
+	s.scanner.Scan()
 
 	var nonPointer User
-	this.So(this.scanner.Populate(nonPointer), should.NotBeNil)
+	s.So(s.scanner.Populate(nonPointer), should.NotBeNil)
 
 	var nilPointer *User
-	this.So(this.scanner.Populate(nilPointer), should.NotBeNil)
+	s.So(s.scanner.Populate(nilPointer), should.NotBeNil)
 }

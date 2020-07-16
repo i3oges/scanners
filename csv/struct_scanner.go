@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"strconv"
 )
 
+// StructScanner also does things
 type StructScanner struct {
 	*ColumnScanner
 }
 
+// NewStructScanner does things
 func NewStructScanner(reader io.Reader, options ...Option) (*StructScanner, error) {
 	inner, err := NewColumnScanner(reader, options...)
 	if err != nil {
@@ -18,37 +21,52 @@ func NewStructScanner(reader io.Reader, options ...Option) (*StructScanner, erro
 	return &StructScanner{ColumnScanner: inner}, nil
 }
 
-func (this *StructScanner) Populate(v interface{}) error {
-	type_ := reflect.TypeOf(v)
-	if type_.Kind() != reflect.Ptr {
-		return fmt.Errorf("Provided value must be reflect.Ptr. You provided [%v] ([%v]).", v, type_.Kind())
+// Populate scans values into a struct
+func (scanner *StructScanner) Populate(v interface{}) error {
+	rtype := reflect.TypeOf(v)
+	if rtype.Kind() != reflect.Ptr {
+		return fmt.Errorf("provided value must be reflect.Ptr. You provided [%v] ([%v])", v, rtype.Kind())
 	}
 
 	value := reflect.ValueOf(v)
 	if value.IsNil() {
-		return fmt.Errorf("The provided value was nil. Please provide a non-nil pointer.")
+		return fmt.Errorf("the provided value was nil. Please provide a non-nil pointer")
 	}
 
-	this.populate(type_.Elem(), value.Elem())
+	scanner.populate(rtype.Elem(), value.Elem())
 	return nil
 }
 
-func (this *StructScanner) populate(type_ reflect.Type, value reflect.Value) {
-	for x := 0; x < type_.NumField(); x++ {
-		column := type_.Field(x).Tag.Get("csv")
+func (scanner *StructScanner) populate(rtype reflect.Type, value reflect.Value) {
+	for x := 0; x < rtype.NumField(); x++ {
+		column := rtype.Field(x).Tag.Get("csv")
 
-		_, found := this.columnIndex[column]
+		_, found := scanner.columnIndex[column]
 		if !found {
 			continue
 		}
 
 		field := value.Field(x)
-		if field.Kind() != reflect.String {
-			continue // Future: return err?
+		if field.Kind() == reflect.Int64 {
+			intValue, err := strconv.Atoi(scanner.Column(column))
+			if err != nil {
+				continue
+			}
+			field.SetInt(int64(intValue))
+			continue
+		} else if field.Kind() == reflect.Float64 {
+			floatValue, err := strconv.ParseFloat(scanner.Column(column), 64)
+			if err != nil {
+				continue
+			}
+			field.SetFloat(floatValue)
+			continue
+		} else if field.Kind() != reflect.String {
+			continue
 		} else if !field.CanSet() {
 			continue // Future: return err?
 		}
 
-		field.SetString(this.Column(column))
+		field.SetString(scanner.Column(column))
 	}
 }
